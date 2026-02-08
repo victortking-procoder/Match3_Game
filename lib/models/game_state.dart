@@ -1,4 +1,4 @@
-import 'package:shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GameState {
   static const int maxLives = 5;
