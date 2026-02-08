@@ -20,6 +20,7 @@ class _GameScreenState extends State<GameScreen> {
   late GameBoard _gameBoard;
   Timer? _lifeTimer;
   bool _isLoading = true;
+  bool _isFirstGame = true; // Track if it's the first game
 
   @override
   void initState() {
@@ -31,8 +32,12 @@ class _GameScreenState extends State<GameScreen> {
     await _gameState.loadGameState();
     _gameBoard = GameBoard(level: _gameState.currentLevel);
     
-    _adManager.loadRewardedAd(onAdLoaded: () {});
-    _adManager.loadInterstitialAd(onAdLoaded: () {});
+    _adManager.loadRewardedAd(onAdLoaded: () {
+      print('Rewarded ad loaded and ready');
+    });
+    _adManager.loadInterstitialAd(onAdLoaded: () {
+      print('Interstitial ad loaded and ready');
+    });
     
     _startLifeTimer();
     
@@ -109,9 +114,30 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _showRewardedAdForCoins() {
+    if (!_adManager.isRewardedAdReady) {
+      // Ad not ready, proceed without coins
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ad not ready yet. Proceeding to next level...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      _proceedToNextLevel();
+      return;
+    }
+    
     _adManager.showRewardedAd(
-      onRewarded: () {
-        _gameState.addCoins(50);
+      onRewarded: () async {
+        await _gameState.addCoins(50);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🎉 +50 Coins!'),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       },
       onAdDismissed: () {
         _proceedToNextLevel();
@@ -124,15 +150,21 @@ class _GameScreenState extends State<GameScreen> {
     
     _adManager.showInterstitialAd(
       onAdDismissed: () {
-        setState(() {
-          _gameBoard = GameBoard(level: _gameState.currentLevel);
-        });
+        // Lose a life for playing the next level
+        if (_gameState.lives > 0) {
+          _gameState.loseLife();
+          setState(() {
+            _gameBoard = GameBoard(level: _gameState.currentLevel);
+          });
+        } else {
+          _showOutOfLivesDialog();
+        }
       },
     );
   }
 
-  void _onLevelFailed() async {
-    await _gameState.loseLife();
+  void _onLevelFailed() {
+    // Life was already lost when starting the level
     
     if (!mounted) return;
     
@@ -172,12 +204,34 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _showRewardedAdForReplay() {
+    if (!_adManager.isRewardedAdReady) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ad not ready yet. Starting new game...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      setState(() {
+        _gameBoard = GameBoard(level: _gameState.currentLevel);
+      });
+      return;
+    }
+    
     _adManager.showRewardedAd(
       onRewarded: () async {
         await _gameState.addLife();
-        setState(() {
-          _gameBoard = GameBoard(level: _gameState.currentLevel);
-        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❤️ +1 Life! Replaying level...'),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+          setState(() {
+            _gameBoard = GameBoard(level: _gameState.currentLevel);
+          });
+        }
       },
       onAdDismissed: () {
         setState(() {
@@ -221,10 +275,29 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _showRewardedAdForLife() {
+    if (!_adManager.isRewardedAdReady) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ad not ready yet. Please wait...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    
     _adManager.showRewardedAd(
       onRewarded: () async {
         await _gameState.addLife();
-        setState(() {});
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❤️ +1 Life!'),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+          setState(() {});
+        }
       },
       onAdDismissed: () {
         setState(() {});
@@ -243,6 +316,13 @@ class _GameScreenState extends State<GameScreen> {
     if (_gameState.lives <= 0) {
       _showOutOfLivesDialog();
       return;
+    }
+    
+    // Don't lose a life on the very first game, but lose on subsequent games
+    if (!_isFirstGame) {
+      _gameState.loseLife();
+    } else {
+      _isFirstGame = false; // No longer the first game
     }
     
     setState(() {
