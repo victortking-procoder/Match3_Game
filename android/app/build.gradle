@@ -7,7 +7,7 @@ plugins {
 android {
     namespace "com.example.match3_game"
     compileSdk 34
-    ndkVersion "25.1.8937393"
+    ndkVersion "27.0.12077973"
 
     defaultConfig {
         applicationId "com.example.match3_game"
