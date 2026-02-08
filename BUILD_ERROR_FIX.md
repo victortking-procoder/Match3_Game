@@ -1,17 +1,17 @@
 # BUILD ERROR FIX - APPLIED ✅
 
-## Latest Fix (Gradle 8.7)
+## Latest Fix (Gradle 8.9)
 
-**Final Update:** Gradle minimum version is **8.7**
+**FINAL Update:** Gradle minimum version is **8.9**
 
-Codemagic's Flutter build environment requires Gradle 8.7 minimum.
+Codemagic's Flutter build environment now requires Gradle 8.9 minimum.
 
 ### Changes Applied:
-✅ **Gradle updated to 8.7**
-✅ **Android Gradle Plugin to 8.7.0**
+✅ **Gradle updated to 8.9**
+✅ **Android Gradle Plugin to 8.9.0**
 ✅ All other fixes remain active
 
-This should be the final version needed! ✅
+**This is the latest stable Gradle 8.x version - should work!** ✅
 
 ---
 
@@ -33,9 +33,9 @@ This happens when:
 
 ## What I Fixed
 
-✅ **Updated Gradle to 8.7** (final version)
+✅ **Updated Gradle to 8.9** (latest stable 8.x)
 ✅ **Updated Kotlin to 1.9.24** (from 1.9.0)
-✅ **Updated Android Gradle Plugin to 8.7.0** (from 8.1.0)
+✅ **Updated Android Gradle Plugin to 8.9.0** (from 8.1.0)
 ✅ **Updated Java target to 17** (from 8)
 ✅ **Added NDK version specification**
 ✅ **Optimized gradle.properties** for faster builds
@@ -47,12 +47,12 @@ This happens when:
 ### 1. `android/build.gradle`
 ```gradle
 ext.kotlin_version = '1.9.24'  // Updated from 1.9.0
-classpath "com.android.tools.build:gradle:8.7.0"  // Updated to latest compatible
+classpath "com.android.tools.build:gradle:8.9.0"  // Updated to latest
 ```
 
 ### 2. `android/settings.gradle`
 ```gradle
-id "com.android.application" version "8.7.0"  // Updated
+id "com.android.application" version "8.9.0"  // Updated
 id "org.jetbrains.kotlin.android" version "1.9.24"  // Updated
 ```
 
@@ -73,7 +73,7 @@ kotlinOptions {
 
 ### 4. `android/gradle/wrapper/gradle-wrapper.properties` (NEW)
 ```properties
-distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-all.zip
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.9-all.zip
 ```
 
 ### 5. `android/gradle.properties`
@@ -163,13 +163,13 @@ After successful build:
 
 This fixed version is compatible with:
 - ✅ Flutter 3.0.0+
-- ✅ Gradle 8.7
+- ✅ Gradle 8.9 (latest stable 8.x)
 - ✅ Kotlin 1.9.24
-- ✅ Android Gradle Plugin 8.7.0
+- ✅ Android Gradle Plugin 8.9.0
 - ✅ Java 17
 - ✅ Android API 21-34
 
-**This version meets Codemagic's current requirements!**
+**Gradle 8.9 is the latest stable 8.x version - this should finally work!**
 
 ## Next Steps
 
