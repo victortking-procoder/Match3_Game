@@ -10,42 +10,50 @@ class AdManager {
   bool _isInterstitialAdReady = false;
   
   // Load Rewarded Ad
-  void loadRewardedAd({required Function() onAdLoaded}) {
+  void loadRewardedAd({Function()? onAdLoaded}) {
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
-          print('Rewarded ad loaded successfully');
+          print('✅ Rewarded ad loaded successfully');
           _rewardedAd = ad;
           _isRewardedAdReady = true;
-          onAdLoaded();
           
+          // Set callbacks ONCE after loading
           _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdShowedFullScreenContent: (ad) {
+              print('📺 Rewarded ad showed full screen content');
+            },
             onAdDismissedFullScreenContent: (ad) {
-              print('Rewarded ad dismissed');
+              print('❌ Rewarded ad dismissed');
               ad.dispose();
               _rewardedAd = null;
               _isRewardedAdReady = false;
-              // Reload immediately
-              loadRewardedAd(onAdLoaded: () {});
+              // Preload next ad
+              loadRewardedAd();
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
-              print('Rewarded ad failed to show: $error');
+              print('⚠️ Rewarded ad failed to show: $error');
               ad.dispose();
               _rewardedAd = null;
               _isRewardedAdReady = false;
-              // Reload immediately
-              loadRewardedAd(onAdLoaded: () {});
+              // Preload next ad
+              loadRewardedAd();
             },
           );
+          
+          if (onAdLoaded != null) {
+            onAdLoaded();
+          }
         },
         onAdFailedToLoad: (error) {
-          print('Rewarded ad failed to load: $error');
+          print('❌ Rewarded ad failed to load: ${error.message}');
           _isRewardedAdReady = false;
+          _rewardedAd = null;
           // Retry loading after a delay
-          Future.delayed(const Duration(seconds: 3), () {
-            loadRewardedAd(onAdLoaded: () {});
+          Future.delayed(const Duration(seconds: 5), () {
+            loadRewardedAd();
           });
         },
       ),
@@ -58,85 +66,106 @@ class AdManager {
     required Function() onAdDismissed,
   }) {
     if (_isRewardedAdReady && _rewardedAd != null) {
-      print('Showing rewarded ad');
+      print('🎬 Attempting to show rewarded ad');
       
       bool rewardGranted = false;
       
+      // Store the original callback
+      final originalCallback = _rewardedAd!.fullScreenContentCallback;
+      
+      // Update callback to include our custom logic
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdShowedFullScreenContent: (ad) {
+          print('📺 Rewarded ad showed full screen content');
+        },
+        onAdDismissedFullScreenContent: (ad) {
+          print('❌ Rewarded ad dismissed, reward granted: $rewardGranted');
+          ad.dispose();
+          _rewardedAd = null;
+          _isRewardedAdReady = false;
+          
+          // Call user's callback
+          onAdDismissed();
+          
+          // Preload next ad
+          loadRewardedAd();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          print('⚠️ Rewarded ad failed to show: $error');
+          ad.dispose();
+          _rewardedAd = null;
+          _isRewardedAdReady = false;
+          
+          // Call user's callback even on failure
+          onAdDismissed();
+          
+          // Preload next ad
+          loadRewardedAd();
+        },
+      );
+      
       _rewardedAd!.show(
         onUserEarnedReward: (ad, reward) {
-          print('User earned reward: ${reward.amount} ${reward.type}');
+          print('🎉 User earned reward: ${reward.amount} ${reward.type}');
           rewardGranted = true;
           onRewarded();
         },
       );
-      
-      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (ad) {
-          print('Rewarded ad dismissed, reward granted: $rewardGranted');
-          ad.dispose();
-          _rewardedAd = null;
-          _isRewardedAdReady = false;
-          onAdDismissed();
-          // Reload for next time
-          loadRewardedAd(onAdLoaded: () {});
-        },
-        onAdFailedToShowFullScreenContent: (ad, error) {
-          print('Rewarded ad failed to show: $error');
-          ad.dispose();
-          _rewardedAd = null;
-          _isRewardedAdReady = false;
-          onAdDismissed();
-          // Reload for next time
-          loadRewardedAd(onAdLoaded: () {});
-        },
-      );
     } else {
-      print('Rewarded ad not ready');
+      print('⚠️ Rewarded ad not ready, proceeding without ad');
       onAdDismissed();
       // Try to load if not already loading
       if (!_isRewardedAdReady) {
-        loadRewardedAd(onAdLoaded: () {});
+        loadRewardedAd();
       }
     }
   }
   
   // Load Interstitial Ad
-  void loadInterstitialAd({required Function() onAdLoaded}) {
+  void loadInterstitialAd({Function()? onAdLoaded}) {
     InterstitialAd.load(
       adUnitId: interstitialAdUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
-          print('Interstitial ad loaded successfully');
+          print('✅ Interstitial ad loaded successfully');
           _interstitialAd = ad;
           _isInterstitialAdReady = true;
-          onAdLoaded();
           
+          // Set callbacks ONCE after loading
           _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdShowedFullScreenContent: (ad) {
+              print('📺 Interstitial ad showed full screen content');
+            },
             onAdDismissedFullScreenContent: (ad) {
-              print('Interstitial ad dismissed');
+              print('❌ Interstitial ad dismissed');
               ad.dispose();
               _interstitialAd = null;
               _isInterstitialAdReady = false;
-              // Reload immediately
-              loadInterstitialAd(onAdLoaded: () {});
+              // Preload next ad
+              loadInterstitialAd();
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
-              print('Interstitial ad failed to show: $error');
+              print('⚠️ Interstitial ad failed to show: $error');
               ad.dispose();
               _interstitialAd = null;
               _isInterstitialAdReady = false;
-              // Reload immediately
-              loadInterstitialAd(onAdLoaded: () {});
+              // Preload next ad
+              loadInterstitialAd();
             },
           );
+          
+          if (onAdLoaded != null) {
+            onAdLoaded();
+          }
         },
         onAdFailedToLoad: (error) {
-          print('Interstitial ad failed to load: $error');
+          print('❌ Interstitial ad failed to load: ${error.message}');
           _isInterstitialAdReady = false;
+          _interstitialAd = null;
           // Retry loading after a delay
-          Future.delayed(const Duration(seconds: 3), () {
-            loadInterstitialAd(onAdLoaded: () {});
+          Future.delayed(const Duration(seconds: 5), () {
+            loadInterstitialAd();
           });
         },
       ),
@@ -146,35 +175,46 @@ class AdManager {
   // Show Interstitial Ad
   void showInterstitialAd({required Function() onAdDismissed}) {
     if (_isInterstitialAdReady && _interstitialAd != null) {
-      print('Showing interstitial ad');
-      _interstitialAd!.show();
+      print('🎬 Attempting to show interstitial ad');
       
+      // Update callback to include our custom logic
       _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdShowedFullScreenContent: (ad) {
+          print('📺 Interstitial ad showed full screen content');
+        },
         onAdDismissedFullScreenContent: (ad) {
-          print('Interstitial ad dismissed');
+          print('❌ Interstitial ad dismissed');
           ad.dispose();
           _interstitialAd = null;
           _isInterstitialAdReady = false;
+          
+          // Call user's callback
           onAdDismissed();
-          // Reload for next time
-          loadInterstitialAd(onAdLoaded: () {});
+          
+          // Preload next ad
+          loadInterstitialAd();
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
-          print('Interstitial ad failed to show: $error');
+          print('⚠️ Interstitial ad failed to show: $error');
           ad.dispose();
           _interstitialAd = null;
           _isInterstitialAdReady = false;
+          
+          // Call user's callback even on failure
           onAdDismissed();
-          // Reload for next time
-          loadInterstitialAd(onAdLoaded: () {});
+          
+          // Preload next ad
+          loadInterstitialAd();
         },
       );
+      
+      _interstitialAd!.show();
     } else {
-      print('Interstitial ad not ready, proceeding anyway');
+      print('⚠️ Interstitial ad not ready, proceeding without ad');
       onAdDismissed();
       // Try to load if not already loading
       if (!_isInterstitialAdReady) {
-        loadInterstitialAd(onAdLoaded: () {});
+        loadInterstitialAd();
       }
     }
   }
@@ -185,5 +225,9 @@ class AdManager {
   void dispose() {
     _rewardedAd?.dispose();
     _interstitialAd?.dispose();
+    _rewardedAd = null;
+    _interstitialAd = null;
+    _isRewardedAdReady = false;
+    _isInterstitialAdReady = false;
   }
 }
